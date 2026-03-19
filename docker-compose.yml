@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - USER_SERVICE_URL=http://user-service:8000
+      - NOTES_SERVICE_URL=http://notes-service:8000
+      - STUDY_SESSION_SERVICE_URL=http://study-session-service:8000
+      - RAG_QA_SERVICE_URL=http://rag-qa-service:8000
+    depends_on:
+      - user-service
+      - notes-service
+      - study-session-service
+      - rag-qa-service
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "8001:8000"
+
+  notes-service:
+    build: ./notes-service
+    ports:
+      - "8002:8000"
+
+  study-session-service:
+    build: ./study-session-service
+    ports:
+      - "8003:8000"
+
+  rag-qa-service:
+    build: ./rag-qa-service
+    ports:
+      - "8004:8000"
+    environment:
+      - NOTES_SERVICE_URL=http://notes-service:8000
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway

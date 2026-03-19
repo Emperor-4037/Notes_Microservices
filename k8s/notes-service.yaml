@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notes-service
+  template:
+    metadata:
+      labels:
+        app: notes-service
+    spec:
+      containers:
+      - name: notes-service
+        image: study-assistant/notes-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-service
+spec:
+  selector:
+    app: notes-service
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: study-session-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: study-session-service
+  template:
+    metadata:
+      labels:
+        app: study-session-service
+    spec:
+      containers:
+      - name: study-session-service
+        image: study-assistant/study-session-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: study-session-service
+spec:
+  selector:
+    app: study-session-service
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

@@ -1,0 +1,1 @@
+Web development involves creating websites and web applications. It includes frontend development (HTML, CSS, JavaScript) and backend development (server-side programming, databases). Modern web development often uses frameworks like React, Angular, Vue.js for frontend and Node.js, Django, Flask for backend.
