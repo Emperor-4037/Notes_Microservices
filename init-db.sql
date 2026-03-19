@@ -1,0 +1,115 @@
+-- Initialize PostgreSQL database for Notes Microservices
+-- This script creates all necessary tables for the microservices
+
+-- Users service tables
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for users table
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- Notes service tables
+CREATE TABLE IF NOT EXISTS notes (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200),
+    content TEXT,
+    file_path VARCHAR(500),
+    file_type VARCHAR(50),
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for notes table
+CREATE INDEX IF NOT EXISTS idx_notes_title ON notes(title);
+CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id);
+
+-- Study session service tables
+CREATE TABLE IF NOT EXISTS flashcards (
+    id SERIAL PRIMARY KEY,
+    question TEXT,
+    answer TEXT,
+    user_id INTEGER NOT NULL,
+    note_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS quizzes (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200),
+    questions JSONB,
+    user_id INTEGER NOT NULL,
+    note_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS study_sessions (
+    id SERIAL PRIMARY KEY,
+    session_type VARCHAR(20) CHECK (session_type IN ('flashcard', 'quiz')),
+    content_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    score INTEGER,
+    total_items INTEGER,
+    time_spent_minutes INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for study session tables
+CREATE INDEX IF NOT EXISTS idx_flashcards_user_id ON flashcards(user_id);
+CREATE INDEX IF NOT EXISTS idx_flashcards_note_id ON flashcards(note_id);
+CREATE INDEX IF NOT EXISTS idx_quizzes_user_id ON quizzes(user_id);
+CREATE INDEX IF NOT EXISTS idx_quizzes_note_id ON quizzes(note_id);
+CREATE INDEX IF NOT EXISTS idx_study_sessions_user_id ON study_sessions(user_id);
+
+-- RAG QA service tables
+CREATE TABLE IF NOT EXISTS documents (
+    id SERIAL PRIMARY KEY,
+    note_id INTEGER NOT NULL,
+    title VARCHAR(200),
+    content TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS document_chunks (
+    id SERIAL PRIMARY KEY,
+    document_id INTEGER NOT NULL,
+    chunk_text TEXT,
+    chunk_index INTEGER,
+    embedding TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for RAG QA tables
+CREATE INDEX IF NOT EXISTS idx_documents_note_id ON documents(note_id);
+CREATE INDEX IF NOT EXISTS idx_document_chunks_document_id ON document_chunks(document_id);
+
+-- Add foreign key constraints
+ALTER TABLE notes ADD CONSTRAINT fk_notes_user_id FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE flashcards ADD CONSTRAINT fk_flashcards_user_id FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE flashcards ADD CONSTRAINT fk_flashcards_note_id FOREIGN KEY (note_id) REFERENCES notes(id);
+ALTER TABLE quizzes ADD CONSTRAINT fk_quizzes_user_id FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE quizzes ADD CONSTRAINT fk_quizzes_note_id FOREIGN KEY (note_id) REFERENCES notes(id);
+ALTER TABLE study_sessions ADD CONSTRAINT fk_study_sessions_user_id FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE documents ADD CONSTRAINT fk_documents_note_id FOREIGN KEY (note_id) REFERENCES notes(id);
+ALTER TABLE document_chunks ADD CONSTRAINT fk_document_chunks_document_id FOREIGN KEY (document_id) REFERENCES documents(id);
+
+-- Create trigger for updating updated_at timestamp in notes table
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_notes_updated_at 
+    BEFORE UPDATE ON notes 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();

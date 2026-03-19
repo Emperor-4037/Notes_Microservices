@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: study-session-service
+  namespace: notes-microservices
 spec:
   replicas: 1
   selector:
@@ -18,11 +19,15 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:password@postgres:5432/notes_microservices"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: study-session-service
+  namespace: notes-microservices
 spec:
   selector:
     app: study-session-service

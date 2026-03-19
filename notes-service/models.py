@@ -18,8 +18,9 @@ class Note(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # Database setup
-DATABASE_URL = "sqlite:///./notes.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+import os
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/notes_microservices")
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
